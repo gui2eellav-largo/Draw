@@ -57,11 +57,14 @@ export default function UploadPage() {
         body: formData,
       })
 
-      if (!response.ok) {
-        throw new Error('Erreur lors de l\'analyse')
-      }
-
       const data = await response.json()
+
+      if (!response.ok) {
+        // Afficher le détail de l'erreur renvoyé par l'API
+        const errorMsg = data.error || 'Erreur lors de l\'analyse'
+        const errorDetails = data.details ? ` (${data.details})` : ''
+        throw new Error(errorMsg + errorDetails)
+      }
 
       // Simuler fin de progression
       setUploadProgress(100)

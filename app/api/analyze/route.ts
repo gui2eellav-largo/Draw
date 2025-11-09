@@ -4,10 +4,25 @@ import { prisma } from '@/lib/db/prisma'
 import { writeFile, unlink } from 'fs/promises'
 import { join } from 'path'
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
+// Configuration
+export const runtime = 'nodejs'
+export const maxDuration = 60 // 60 seconds max
+
+const genAI = process.env.GEMINI_API_KEY
+  ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+  : null
 
 export async function POST(request: NextRequest) {
   try {
+    // Vérifier que l'API key est configurée
+    if (!process.env.GEMINI_API_KEY || !genAI) {
+      console.error('GEMINI_API_KEY is not configured')
+      return NextResponse.json(
+        { error: 'API Gemini non configurée. Contactez l\'administrateur.' },
+        { status: 500 }
+      )
+    }
+
     const formData = await request.formData()
     const file = formData.get('video') as File
 
@@ -17,6 +32,8 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    console.log(`Received file: ${file.name}, size: ${file.size} bytes, type: ${file.type}`)
 
     // Sauvegarder temporairement le fichier
     const bytes = await file.arrayBuffer()
@@ -127,9 +144,33 @@ Sois précis dans les scores et les observations.`
     })
 
   } catch (error) {
-    console.error('Erreur analyse:', error)
+    console.error('Erreur analyse complète:', error)
+
+    // Message d'erreur détaillé
+    let errorMessage = 'Erreur lors de l\'analyse'
+    let errorDetails = ''
+
+    if (error instanceof Error) {
+      errorDetails = error.message
+
+      // Erreurs spécifiques
+      if (error.message.includes('API key')) {
+        errorMessage = 'Clé API Gemini invalide'
+      } else if (error.message.includes('quota')) {
+        errorMessage = 'Quota API Gemini dépassé'
+      } else if (error.message.includes('timeout')) {
+        errorMessage = 'Temps d\'analyse dépassé'
+      } else if (error.message.includes('size')) {
+        errorMessage = 'Fichier trop volumineux'
+      }
+    }
+
     return NextResponse.json(
-      { error: 'Erreur lors de l\'analyse', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: errorMessage,
+        details: errorDetails || 'Erreur inconnue',
+        timestamp: new Date().toISOString()
+      },
       { status: 500 }
     )
   }
