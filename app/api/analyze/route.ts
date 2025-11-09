@@ -85,23 +85,32 @@ Sois précis dans les scores et les observations.`
 
     const analysisData = JSON.parse(cleanedText)
 
-    // Sauvegarder dans la base de données
-    const analysis = await prisma.analysis.create({
-      data: {
-        userId: 'mock-user-id', // TODO: remplacer par vrai user ID après auth
-        videoUrl: tempPath, // TODO: uploader sur cloud storage
-        duration: 120, // TODO: extraire durée réelle
-        globalScore: analysisData.globalScore,
-        rhythmScore: analysisData.rhythmScore,
-        clarityScore: analysisData.clarityScore,
-        structureScore: analysisData.structureScore,
-        wordsPerMin: analysisData.wordsPerMin,
-        fillerWords: analysisData.fillerWords,
-        pausesEffective: analysisData.pausesEffective,
-        transcript: analysisData.transcript,
-        annotations: JSON.stringify(analysisData.annotations)
+    // Sauvegarder dans la base de données (si disponible)
+    let analysisId = 'mock-analysis-' + Date.now()
+
+    if (prisma) {
+      try {
+        const analysis = await prisma.analysis.create({
+          data: {
+            userId: 'mock-user-id', // TODO: remplacer par vrai user ID après auth
+            videoUrl: tempPath, // TODO: uploader sur cloud storage
+            duration: 120, // TODO: extraire durée réelle
+            globalScore: analysisData.globalScore,
+            rhythmScore: analysisData.rhythmScore,
+            clarityScore: analysisData.clarityScore,
+            structureScore: analysisData.structureScore,
+            wordsPerMin: analysisData.wordsPerMin,
+            fillerWords: analysisData.fillerWords,
+            pausesEffective: analysisData.pausesEffective,
+            transcript: analysisData.transcript,
+            annotations: JSON.stringify(analysisData.annotations)
+          }
+        })
+        analysisId = analysis.id
+      } catch (dbError) {
+        console.warn('Database save failed, continuing without persistence:', dbError)
       }
-    })
+    }
 
     // Nettoyer le fichier temporaire après quelques secondes
     setTimeout(async () => {
@@ -113,7 +122,7 @@ Sois précis dans les scores et les observations.`
     }, 5000)
 
     return NextResponse.json({
-      analysisId: analysis.id,
+      analysisId,
       ...analysisData
     })
 
