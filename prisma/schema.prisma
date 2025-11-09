@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  image         String?
+  createdAt     DateTime  @default(now())
+
+  analyses      Analysis[]
+  exercises     ExerciseLog[]
+
+  // Gamification
+  xp            Int       @default(0)
+  level         Int       @default(1)
+  streak        Int       @default(0)
+  lastActive    DateTime  @default(now())
+}
+
+model Analysis {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+
+  // Video data
+  videoUrl      String
+  duration      Int       // en secondes
+  transcript    String?
+
+  // Scores (0-100)
+  globalScore   Float
+  rhythmScore   Float
+  clarityScore  Float
+  structureScore Float
+
+  // Métriques détaillées
+  wordsPerMin   Int
+  fillerWords   Int       // "euh", "donc", etc.
+  pausesEffective Float   // pourcentage
+
+  // Annotations (JSON)
+  annotations   String    // timestamps avec insights
+
+  createdAt     DateTime  @default(now())
+}
+
+model ExerciseLog {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+
+  exerciseType  String    // "reading", "improv", "breathing"
+  completed     Boolean   @default(false)
+  xpEarned      Int       @default(50)
+
+  createdAt     DateTime  @default(now())
+}
