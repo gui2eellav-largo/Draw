@@ -44,8 +44,8 @@ export async function POST(request: NextRequest) {
     // Préparer le fichier pour Gemini
     const videoBuffer = buffer.toString('base64')
 
-    // Analyser avec Gemini
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    // Analyser avec Gemini 2.5 Flash (meilleur pour l'analyse vidéo)
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
     const prompt = `Tu es un expert en communication orale et éloquence. Analyse cette vidéo de présentation et fournis une évaluation détaillée.
 
