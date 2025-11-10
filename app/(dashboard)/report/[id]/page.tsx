@@ -3,23 +3,30 @@
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Navbar } from "@/components/shared/Navbar"
+import { VideoPlayer } from "@/components/report/VideoPlayer"
+import { MetricCard } from "@/components/report/MetricCard"
+import { ProgressComparison } from "@/components/report/ProgressComparison"
+import { GoalPlanner } from "@/components/report/GoalPlanner"
 import { ProgressRing } from "@/components/dashboard/ProgressRing"
-import { MetricSlider } from "@/components/report/MetricSlider"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import {
   ArrowLeft,
-  TrendingUp,
-  Lightbulb,
-  Target,
+  Share2,
+  Download,
   CheckCircle2,
   AlertTriangle,
-  Share2,
-  Download
+  Target,
+  TrendingUp,
+  Mic,
+  Clock,
+  MessageSquare,
+  Volume2,
+  Waves,
+  Network,
+  Play
 } from "lucide-react"
-import { motion } from "framer-motion"
 import Link from "next/link"
 
 interface AnalysisData {
@@ -31,6 +38,8 @@ interface AnalysisData {
   wordsPerMin: number
   fillerWords: number
   pausesEffective: number
+  modulation: number
+  coherence: number
   annotations: Array<{
     timestamp: number
     type: 'success' | 'warning' | 'error'
@@ -42,6 +51,7 @@ interface AnalysisData {
     tips: string[]
   }
   createdAt: string
+  videoUrl?: string
 }
 
 export default function ReportPage() {
@@ -52,7 +62,6 @@ export default function ReportPage() {
 
   useEffect(() => {
     // TODO: Fetch real data from API
-    // Simuler fetch de données
     setTimeout(() => {
       setData({
         id: params.id as string,
@@ -63,27 +72,34 @@ export default function ReportPage() {
         wordsPerMin: 145,
         fillerWords: 12,
         pausesEffective: 68,
+        modulation: 75,
+        coherence: 79,
         annotations: [
           { timestamp: 23, type: 'success', message: 'Excellente ouverture captivante' },
-          { timestamp: 74, type: 'warning', message: 'Débit trop rapide (-15%)' },
-          { timestamp: 165, type: 'error', message: '6 "euh" en 20 secondes' },
-          { timestamp: 230, type: 'success', message: 'Pause stratégique parfaite' }
+          { timestamp: 74, type: 'warning', message: 'Débit trop rapide, ralentir de 15%' },
+          { timestamp: 165, type: 'error', message: '6 mots parasites en 20 secondes' },
+          { timestamp: 230, type: 'success', message: 'Pause stratégique parfaite' },
+          { timestamp: 305, type: 'warning', message: 'Modulation vocale à améliorer' }
         ],
         insights: {
           strengths: [
             'Articulation claire et prononciation excellente',
-            'Bonne modulation vocale qui maintient l\'attention'
+            'Bonne modulation vocale qui maintient l\'attention',
+            'Structure du discours cohérente avec transitions fluides'
           ],
           improvements: [
-            'Réduire les mots de remplissage (12/min → objectif 5/min)',
-            'Mieux gérer les pauses pour donner plus d\'impact'
+            'Réduire les mots de remplissage (actuellement 12/min, objectif 5/min)',
+            'Mieux gérer les pauses pour donner plus d\'impact aux idées clés',
+            'Stabiliser le débit dans les moments de stress'
           ],
           tips: [
             'Pratique "Le pouvoir du silence" : remplace les "euh" par des micro-pauses de 1-2 secondes',
-            'Entraîne-toi avec un métronome à 140 BPM pour stabiliser ton débit'
+            'Entraîne-toi avec un métronome à 140 BPM pour stabiliser ton débit',
+            'Respire profondément avant chaque section importante'
           ]
         },
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        videoUrl: undefined
       })
       setLoading(false)
     }, 500)
@@ -94,7 +110,7 @@ export default function ReportPage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mx-auto mb-4" />
-          <p className="text-white/60">Chargement du rapport...</p>
+          <p className="text-white/60">Chargement de ton rapport...</p>
         </div>
       </div>
     )
@@ -120,255 +136,274 @@ export default function ReportPage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
-  const getAnnotationIcon = (type: string) => {
+  const getAnnotationColor = (type: string) => {
     switch (type) {
-      case 'success': return <CheckCircle2 className="w-5 h-5 text-green-500" />
-      case 'warning': return <AlertTriangle className="w-5 h-5 text-yellow-500" />
-      case 'error': return <AlertTriangle className="w-5 h-5 text-red-500" />
-      default: return null
+      case 'success': return 'bg-green-500/20 border-green-500/30 text-green-500'
+      case 'warning': return 'bg-orange-500/20 border-orange-500/30 text-orange-500'
+      case 'error': return 'bg-red-500/20 border-red-500/30 text-red-500'
+      default: return 'bg-white/10 border-white/20'
     }
   }
+
+  // Data for previous analysis comparison
+  const comparisonData = [
+    { metric: 'Rythme', previous: 65, current: 68, improvement: 4.6 },
+    { metric: 'Clarté', previous: 78, current: 82, improvement: 5.1 },
+    { metric: 'Structure', previous: 76, current: 79, improvement: 3.9 },
+  ]
+
+  // Metrics for goal planner
+  const metricsForGoals = [
+    { id: 'fillerWords', name: 'Mots parasites', current: data.fillerWords, unit: '/min', min: 0, max: 20, inverse: true },
+    { id: 'rhythm', name: 'Rythme', current: data.rhythmScore, unit: '/100', min: 50, max: 100 },
+    { id: 'clarity', name: 'Clarté', current: data.clarityScore, unit: '/100', min: 50, max: 100 },
+    { id: 'structure', name: 'Structure', current: data.structureScore, unit: '/100', min: 50, max: 100 },
+  ]
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <main className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
+      <main className="container mx-auto px-4 py-6">
+        {/* SECTION 1: Header compact */}
+        <div className="flex items-center justify-between mb-6">
           <Link href="/dashboard">
-            <Button variant="ghost" className="mb-4">
+            <Button variant="ghost" size="sm" className="hover:bg-white/10">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour au dashboard
+              Dashboard
             </Button>
           </Link>
 
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
-                Ton rapport d&apos;éloquence
-              </h1>
-              <p className="text-white/60">
-                Analysé le {new Date(data.createdAt).toLocaleDateString('fr-FR', {
-                  day: 'numeric',
-                  month: 'long',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </p>
-            </div>
-
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm">
-                <Share2 className="w-4 h-4 mr-2" />
-                Partager
-              </Button>
-              <Button variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
-                PDF
-              </Button>
-            </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-white/40">
+              {new Date(data.createdAt).toLocaleDateString('fr-FR', {
+                day: 'numeric',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
+            </span>
+            <Button variant="outline" size="sm" className="hover:bg-white/10">
+              <Share2 className="w-4 h-4 mr-2" />
+              Partager
+            </Button>
+            <Button variant="outline" size="sm" className="hover:bg-white/10">
+              <Download className="w-4 h-4 mr-2" />
+              PDF
+            </Button>
           </div>
-        </motion.div>
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Score Principal */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.1 }}
-            className="lg:col-span-1"
+        {/* SECTION 2: Video + Score global (Hero) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Video player */}
+          <div>
+            <VideoPlayer videoUrl={data.videoUrl} />
+          </div>
+
+          {/* Global score + breakdown */}
+          <Card className="glass-effect border-white/10 p-8 flex flex-col items-center justify-center">
+            <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wide mb-6">
+              Score Global d'Éloquence
+            </h2>
+            <ProgressRing score={data.globalScore} size={220} label="" />
+
+            <div className="w-full mt-8 grid grid-cols-3 gap-4">
+              <div className="text-center p-4 rounded-lg bg-white/5">
+                <div className="text-2xl font-bold mb-1">{data.rhythmScore}</div>
+                <div className="text-xs text-white/60">Rythme</div>
+              </div>
+              <div className="text-center p-4 rounded-lg bg-white/5">
+                <div className="text-2xl font-bold mb-1">{data.clarityScore}</div>
+                <div className="text-xs text-white/60">Clarté</div>
+              </div>
+              <div className="text-center p-4 rounded-lg bg-white/5">
+                <div className="text-2xl font-bold mb-1">{data.structureScore}</div>
+                <div className="text-xs text-white/60">Structure</div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* SECTION 3: Métriques dashboard (Dense grid) */}
+        <div className="mb-8">
+          <h2 className="text-xl font-bold mb-4">Vue d'ensemble des métriques</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <MetricCard
+              icon={Mic}
+              label="Débit de parole"
+              value={data.wordsPerMin}
+              unit="mots/min"
+              target={150}
+              trend="up"
+              trendValue="+3%"
+              colorScheme={data.wordsPerMin >= 140 && data.wordsPerMin <= 160 ? "green" : "orange"}
+            />
+            <MetricCard
+              icon={Clock}
+              label="Pauses efficaces"
+              value={data.pausesEffective}
+              unit="%"
+              target={80}
+              colorScheme={data.pausesEffective >= 70 ? "green" : "orange"}
+            />
+            <MetricCard
+              icon={MessageSquare}
+              label="Mots parasites"
+              value={data.fillerWords}
+              unit="/min"
+              target={5}
+              trend="down"
+              trendValue="-2"
+              colorScheme={data.fillerWords <= 5 ? "green" : data.fillerWords <= 10 ? "orange" : "red"}
+            />
+            <MetricCard
+              icon={Volume2}
+              label="Clarté articulation"
+              value={data.clarityScore}
+              unit="/100"
+              target={85}
+              trend="up"
+              trendValue="+4pts"
+              colorScheme="green"
+            />
+            <MetricCard
+              icon={Waves}
+              label="Modulation vocale"
+              value={data.modulation}
+              unit="/100"
+              target={80}
+              colorScheme="orange"
+            />
+            <MetricCard
+              icon={Network}
+              label="Cohérence discours"
+              value={data.coherence}
+              unit="/100"
+              target={80}
+              colorScheme="orange"
+            />
+          </div>
+        </div>
+
+        {/* SECTION 4: Timeline annotations */}
+        <div className="mb-8">
+          <h2 className="text-xl font-bold mb-4">Moments clés de ta vidéo</h2>
+          <Card className="glass-effect border-white/10 p-6">
+            <div className="space-y-3">
+              {data.annotations.map((annotation, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-4 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                >
+                  <Badge className={`text-xs font-mono ${getAnnotationColor(annotation.type)}`}>
+                    {formatTimestamp(annotation.timestamp)}
+                  </Badge>
+
+                  <div className="flex-1">
+                    <p className="text-sm">{annotation.message}</p>
+                  </div>
+
+                  {annotation.type === 'success' && <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />}
+                  {annotation.type === 'warning' && <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0" />}
+                  {annotation.type === 'error' && <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />}
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+
+        {/* SECTION 5: Insights IA (2 colonnes) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Forces */}
+          <Card className="glass-effect border-white/10 p-6">
+            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
+                <CheckCircle2 className="w-5 h-5 text-green-500" />
+              </div>
+              Forces identifiées
+            </h3>
+            <ul className="space-y-3">
+              {data.insights.strengths.map((strength, i) => (
+                <li key={i} className="flex items-start gap-3 p-3 rounded-lg bg-green-500/5">
+                  <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm">{strength}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </Card>
+
+          {/* Axes d'amélioration */}
+          <Card className="glass-effect border-white/10 p-6">
+            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-orange-500/20 flex items-center justify-center">
+                <Target className="w-5 h-5 text-orange-500" />
+              </div>
+              Axes d'amélioration
+            </h3>
+            <ul className="space-y-3">
+              {data.insights.improvements.map((improvement, i) => (
+                <li key={i} className="flex items-start gap-3 p-3 rounded-lg bg-orange-500/5">
+                  <Target className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm">{improvement}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </div>
+
+        {/* Conseils actionnables */}
+        <Card className="glass-effect border-primary/20 border-2 p-6 mb-8">
+          <h3 className="text-lg font-bold mb-4">Conseils personnalisés</h3>
+          <div className="space-y-3">
+            {data.insights.tips.map((tip, i) => (
+              <div key={i} className="p-4 rounded-lg bg-primary/10 border border-primary/20">
+                <p className="text-sm leading-relaxed">{tip}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Comparison with previous (if exists) */}
+        <div className="mb-8">
+          <ProgressComparison
+            data={comparisonData}
+            previousDate="3 mars 2025"
+          />
+        </div>
+
+        {/* SECTION 6: Planification d'objectif */}
+        <div className="mb-8">
+          <GoalPlanner
+            metrics={metricsForGoals}
+            onCreateGoal={(metric, target, duration) => {
+              console.log('Goal created:', { metric, target, duration })
+              // TODO: Save goal to database
+            }}
+          />
+        </div>
+
+        {/* SECTION 7: Actions finales */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <Button
+            onClick={() => router.push('/exercises')}
+            className="h-16 text-lg font-semibold bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity"
           >
-            <Card className="glass-effect border-white/10 p-8 sticky top-24">
-              <h2 className="text-xl font-semibold mb-6 text-center">Score Global</h2>
-              <ProgressRing score={data.globalScore} size={240} label="Éloquence" />
-
-              <div className="mt-8 space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-white/60">Rythme</span>
-                  <span className="font-semibold">{data.rhythmScore}/100</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-white/60">Clarté</span>
-                  <span className="font-semibold">{data.clarityScore}/100</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-white/60">Structure</span>
-                  <span className="font-semibold">{data.structureScore}/100</span>
-                </div>
-              </div>
-
-              <Separator className="my-6 bg-white/10" />
-
-              <Button className="w-full" onClick={() => router.push('/upload')}>
-                Nouvelle analyse
-              </Button>
-            </Card>
-          </motion.div>
-
-          {/* Détails & Insights */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Métriques détaillées */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                <Target className="w-6 h-6 text-primary" />
-                Analyse détaillée
-              </h2>
-
-              <div className="space-y-4">
-                <MetricSlider
-                  label="Débit de parole"
-                  value={(data.wordsPerMin / 160) * 100}
-                  target={{ min: 70, max: 85 }}
-                  info="Objectif : 140-160 mots/minute pour une écoute confortable"
-                  delay={0.3}
-                />
-
-                <MetricSlider
-                  label="Pauses efficaces"
-                  value={data.pausesEffective}
-                  info="Utilisation stratégique des silences pour renforcer ton message"
-                  delay={0.4}
-                />
-
-                <MetricSlider
-                  label="Mots parasites"
-                  value={Math.max(0, 100 - (data.fillerWords * 8))}
-                  info={`Tu dis "euh", "donc", etc. environ ${data.fillerWords} fois par minute`}
-                  delay={0.5}
-                />
-              </div>
-            </motion.div>
-
-            {/* Timeline Annotations */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-            >
-              <h2 className="text-2xl font-bold mb-6">Timeline de ta vidéo</h2>
-
-              <Card className="glass-effect border-white/10 p-6">
-                <div className="space-y-4">
-                  {data.annotations.map((annotation, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.7 + i * 0.1 }}
-                      className="flex items-start gap-4 p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
-                    >
-                      <div className="flex-shrink-0 mt-1">
-                        {getAnnotationIcon(annotation.type)}
-                      </div>
-
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge variant="outline" className="text-xs">
-                            {formatTimestamp(annotation.timestamp)}
-                          </Badge>
-                        </div>
-                        <p className="text-sm">{annotation.message}</p>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </Card>
-            </motion.div>
-
-            {/* Insights */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 }}
-              className="grid grid-cols-1 md:grid-cols-2 gap-6"
-            >
-              {/* Forces */}
-              <Card className="glass-effect border-white/10 p-6">
-                <h3 className="font-semibold mb-4 flex items-center gap-2 text-green-500">
-                  <TrendingUp className="w-5 h-5" />
-                  Tes forces
-                </h3>
-                <ul className="space-y-3">
-                  {data.insights.strengths.map((strength, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span>{strength}</span>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-
-              {/* Axes d'amélioration */}
-              <Card className="glass-effect border-white/10 p-6">
-                <h3 className="font-semibold mb-4 flex items-center gap-2 text-yellow-500">
-                  <Target className="w-5 h-5" />
-                  À améliorer
-                </h3>
-                <ul className="space-y-3">
-                  {data.insights.improvements.map((improvement, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm">
-                      <AlertTriangle className="w-4 h-4 text-yellow-500 flex-shrink-0 mt-0.5" />
-                      <span>{improvement}</span>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-            </motion.div>
-
-            {/* Tips pratiques */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.9 }}
-            >
-              <Card className="glass-effect border-primary/20 border-2 p-6">
-                <h3 className="font-semibold mb-4 flex items-center gap-2">
-                  <Lightbulb className="w-5 h-5 text-primary" />
-                  Conseils personnalisés
-                </h3>
-                <ul className="space-y-4">
-                  {data.insights.tips.map((tip, i) => (
-                    <li key={i} className="flex items-start gap-3 p-4 rounded-lg bg-primary/10">
-                      <span className="text-2xl">💡</span>
-                      <span className="text-sm">{tip}</span>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-            </motion.div>
-
-            {/* CTA Final */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1 }}
-              className="text-center"
-            >
-              <Card className="glass-effect border-white/10 p-8">
-                <h3 className="text-xl font-bold mb-2">Prochaine étape</h3>
-                <p className="text-white/60 mb-6">
-                  Refais une analyse dans 3 jours pour mesurer tes progrès !
-                </p>
-                <div className="flex gap-4 justify-center">
-                  <Button onClick={() => router.push('/exercises')}>
-                    Faire un exercice
-                  </Button>
-                  <Button variant="outline" onClick={() => router.push('/upload')}>
-                    Nouvelle analyse
-                  </Button>
-                </div>
-              </Card>
-            </motion.div>
-          </div>
+            <Play className="w-5 h-5 mr-2" />
+            Faire un exercice ciblé
+          </Button>
+          <Button
+            onClick={() => router.push('/upload')}
+            variant="outline"
+            className="h-16 text-lg font-semibold hover:bg-white/10"
+          >
+            <TrendingUp className="w-5 h-5 mr-2" />
+            Nouvelle analyse
+          </Button>
         </div>
       </main>
     </div>
