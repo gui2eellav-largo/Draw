@@ -70,6 +70,12 @@ export default function UploadPage() {
       setUploadProgress(100)
       await new Promise(resolve => setTimeout(resolve, 500))
 
+      // Sauvegarder les données de l'analyse dans localStorage
+      localStorage.setItem(`analysis-${data.analysisId}`, JSON.stringify({
+        ...data,
+        createdAt: new Date().toISOString()
+      }))
+
       // Rediriger vers le rapport
       router.push(`/report/${data.analysisId}`)
 

@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Navbar } from "@/components/shared/Navbar"
-import { VideoPlayer } from "@/components/report/VideoPlayer"
 import { MetricCard } from "@/components/report/MetricCard"
 import { ProgressComparison } from "@/components/report/ProgressComparison"
 import { GoalPlanner } from "@/components/report/GoalPlanner"
@@ -51,7 +50,6 @@ interface AnalysisData {
     tips: string[]
   }
   createdAt: string
-  videoUrl?: string
 }
 
 export default function ReportPage() {
@@ -61,48 +59,42 @@ export default function ReportPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // TODO: Fetch real data from API
-    setTimeout(() => {
-      setData({
-        id: params.id as string,
-        globalScore: 72,
-        rhythmScore: 68,
-        clarityScore: 82,
-        structureScore: 79,
-        wordsPerMin: 145,
-        fillerWords: 12,
-        pausesEffective: 68,
-        modulation: 75,
-        coherence: 79,
-        annotations: [
-          { timestamp: 23, type: 'success', message: 'Excellente ouverture captivante' },
-          { timestamp: 74, type: 'warning', message: 'Débit trop rapide, ralentir de 15%' },
-          { timestamp: 165, type: 'error', message: '6 mots parasites en 20 secondes' },
-          { timestamp: 230, type: 'success', message: 'Pause stratégique parfaite' },
-          { timestamp: 305, type: 'warning', message: 'Modulation vocale à améliorer' }
-        ],
-        insights: {
-          strengths: [
-            'Articulation claire et prononciation excellente',
-            'Bonne modulation vocale qui maintient l\'attention',
-            'Structure du discours cohérente avec transitions fluides'
-          ],
-          improvements: [
-            'Réduire les mots de remplissage (actuellement 12/min, objectif 5/min)',
-            'Mieux gérer les pauses pour donner plus d\'impact aux idées clés',
-            'Stabiliser le débit dans les moments de stress'
-          ],
-          tips: [
-            'Pratique "Le pouvoir du silence" : remplace les "euh" par des micro-pauses de 1-2 secondes',
-            'Entraîne-toi avec un métronome à 140 BPM pour stabiliser ton débit',
-            'Respire profondément avant chaque section importante'
-          ]
-        },
-        createdAt: new Date().toISOString(),
-        videoUrl: undefined
-      })
-      setLoading(false)
-    }, 500)
+    // Charger les données depuis localStorage
+    const analysisId = params.id as string
+    const storedData = localStorage.getItem(`analysis-${analysisId}`)
+
+    if (storedData) {
+      try {
+        const parsedData = JSON.parse(storedData)
+
+        // Ajouter les métriques manquantes avec des valeurs par défaut
+        const completeData = {
+          id: analysisId,
+          globalScore: parsedData.globalScore || 0,
+          rhythmScore: parsedData.rhythmScore || 0,
+          clarityScore: parsedData.clarityScore || 0,
+          structureScore: parsedData.structureScore || 0,
+          wordsPerMin: parsedData.wordsPerMin || 0,
+          fillerWords: parsedData.fillerWords || 0,
+          pausesEffective: parsedData.pausesEffective || 0,
+          modulation: parsedData.modulation || Math.round((parsedData.clarityScore || 0) * 0.9), // Approximation
+          coherence: parsedData.coherence || Math.round((parsedData.structureScore || 0) * 0.95), // Approximation
+          annotations: parsedData.annotations || [],
+          insights: parsedData.insights || {
+            strengths: [],
+            improvements: [],
+            tips: []
+          },
+          createdAt: parsedData.createdAt || new Date().toISOString()
+        }
+
+        setData(completeData)
+      } catch (error) {
+        console.error('Error parsing analysis data:', error)
+      }
+    }
+
+    setLoading(false)
   }, [params.id])
 
   if (loading) {
@@ -194,36 +186,40 @@ export default function ReportPage() {
           </div>
         </div>
 
-        {/* SECTION 2: Video + Score global (Hero) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Video player */}
-          <div>
-            <VideoPlayer videoUrl={data.videoUrl} />
-          </div>
+        {/* SECTION 2: Score global (Hero) */}
+        <Card className="glass-effect border-white/10 p-8 mb-8">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+            {/* Score principal */}
+            <div className="flex flex-col items-center">
+              <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wide mb-6">
+                Score Global d'Éloquence
+              </h2>
+              <ProgressRing score={data.globalScore} size={200} label="" />
+            </div>
 
-          {/* Global score + breakdown */}
-          <Card className="glass-effect border-white/10 p-8 flex flex-col items-center justify-center">
-            <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wide mb-6">
-              Score Global d'Éloquence
-            </h2>
-            <ProgressRing score={data.globalScore} size={220} label="" />
-
-            <div className="w-full mt-8 grid grid-cols-3 gap-4">
-              <div className="text-center p-4 rounded-lg bg-white/5">
-                <div className="text-2xl font-bold mb-1">{data.rhythmScore}</div>
-                <div className="text-xs text-white/60">Rythme</div>
+            {/* Breakdown des scores */}
+            <div className="flex-1 w-full grid grid-cols-3 gap-4">
+              <div className="text-center p-6 rounded-lg bg-white/5 border border-white/10">
+                <div className="text-3xl font-bold mb-2">{data.rhythmScore}</div>
+                <div className="text-sm text-white/60">Rythme</div>
+                <div className={`h-1.5 mt-3 rounded-full ${data.rhythmScore >= 80 ? 'bg-green-500' : data.rhythmScore >= 60 ? 'bg-orange-500' : 'bg-red-500'}`}
+                     style={{ width: `${data.rhythmScore}%` }} />
               </div>
-              <div className="text-center p-4 rounded-lg bg-white/5">
-                <div className="text-2xl font-bold mb-1">{data.clarityScore}</div>
-                <div className="text-xs text-white/60">Clarté</div>
+              <div className="text-center p-6 rounded-lg bg-white/5 border border-white/10">
+                <div className="text-3xl font-bold mb-2">{data.clarityScore}</div>
+                <div className="text-sm text-white/60">Clarté</div>
+                <div className={`h-1.5 mt-3 rounded-full ${data.clarityScore >= 80 ? 'bg-green-500' : data.clarityScore >= 60 ? 'bg-orange-500' : 'bg-red-500'}`}
+                     style={{ width: `${data.clarityScore}%` }} />
               </div>
-              <div className="text-center p-4 rounded-lg bg-white/5">
-                <div className="text-2xl font-bold mb-1">{data.structureScore}</div>
-                <div className="text-xs text-white/60">Structure</div>
+              <div className="text-center p-6 rounded-lg bg-white/5 border border-white/10">
+                <div className="text-3xl font-bold mb-2">{data.structureScore}</div>
+                <div className="text-sm text-white/60">Structure</div>
+                <div className={`h-1.5 mt-3 rounded-full ${data.structureScore >= 80 ? 'bg-green-500' : data.structureScore >= 60 ? 'bg-orange-500' : 'bg-red-500'}`}
+                     style={{ width: `${data.structureScore}%` }} />
               </div>
             </div>
-          </Card>
-        </div>
+          </div>
+        </Card>
 
         {/* SECTION 3: Métriques dashboard (Dense grid) */}
         <div className="mb-8">
