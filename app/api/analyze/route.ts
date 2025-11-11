@@ -49,6 +49,8 @@ export async function POST(request: NextRequest) {
 
     const prompt = `Tu es un expert en communication orale et éloquence. Analyse cette vidéo de présentation et fournis une évaluation détaillée.
 
+IMPORTANT : Inclus des citations EXACTES du discours (verbatims) dans les annotations et insights pour illustrer tes observations.
+
 Retourne UNIQUEMENT un objet JSON valide avec cette structure exacte (sans markdown, sans texte avant ou après) :
 
 {
@@ -59,18 +61,33 @@ Retourne UNIQUEMENT un objet JSON valide avec cette structure exacte (sans markd
   "wordsPerMin": <number>,
   "fillerWords": <number>,
   "pausesEffective": <number 0-100>,
-  "transcript": "<texte transcrit>",
+  "transcript": "<transcription complète du discours>",
+  "keyQuotes": [
+    "<citation marquante 1>",
+    "<citation marquante 2>",
+    "<citation marquante 3>"
+  ],
   "annotations": [
     {
       "timestamp": <seconds>,
       "type": "success|warning|error",
-      "message": "<observation courte>"
+      "message": "<observation courte>",
+      "quote": "<citation exacte si pertinent>"
     }
   ],
   "insights": {
-    "strengths": ["<force 1>", "<force 2>"],
-    "improvements": ["<axe 1>", "<axe 2>"],
-    "tips": ["<conseil 1>", "<conseil 2>"]
+    "strengths": [
+      "<force 1 avec citation exacte entre guillemets si possible>",
+      "<force 2 avec citation exacte entre guillemets si possible>"
+    ],
+    "improvements": [
+      "<axe 1 avec exemple/citation précise>",
+      "<axe 2 avec exemple/citation précise>"
+    ],
+    "tips": [
+      "<conseil actionnable 1>",
+      "<conseil actionnable 2>"
+    ]
   }
 }
 
@@ -79,7 +96,14 @@ Critères d'évaluation :
 - Clarté : articulation, projection vocale, mots parasites ("euh", "donc", etc.)
 - Structure : cohérence du discours, utilisation de connecteurs logiques
 
-Sois précis dans les scores et les observations.`
+RÈGLES IMPORTANTES :
+1. Transcris TOUT le discours dans "transcript"
+2. Extrais 3-4 citations marquantes dans "keyQuotes"
+3. Dans les annotations, ajoute des "quote" pour les moments clés
+4. Dans strengths et improvements, cite des EXEMPLES PRÉCIS tirés du discours
+5. Mets les citations entre guillemets : "exemple de citation"
+
+Sois précis dans les scores et observations, et base-toi sur des éléments concrets du discours.`
 
     const result = await model.generateContent([
       {

@@ -71,10 +71,20 @@ export default function UploadPage() {
       await new Promise(resolve => setTimeout(resolve, 500))
 
       // Sauvegarder les données de l'analyse dans localStorage
-      localStorage.setItem(`analysis-${data.analysisId}`, JSON.stringify({
+      const analysisData = {
         ...data,
         createdAt: new Date().toISOString()
-      }))
+      }
+
+      console.log('=== SAVING TO LOCALSTORAGE ===')
+      console.log('Analysis ID:', data.analysisId)
+      console.log('Data to save:', analysisData)
+
+      localStorage.setItem(`analysis-${data.analysisId}`, JSON.stringify(analysisData))
+
+      // Vérifier que c'est bien sauvegardé
+      const verification = localStorage.getItem(`analysis-${data.analysisId}`)
+      console.log('Verification - Data retrieved:', verification ? JSON.parse(verification) : null)
 
       // Rediriger vers le rapport
       router.push(`/report/${data.analysisId}`)

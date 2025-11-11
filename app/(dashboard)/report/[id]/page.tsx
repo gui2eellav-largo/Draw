@@ -39,10 +39,13 @@ interface AnalysisData {
   pausesEffective: number
   modulation: number
   coherence: number
+  transcript?: string
+  keyQuotes?: string[]
   annotations: Array<{
     timestamp: number
     type: 'success' | 'warning' | 'error'
     message: string
+    quote?: string
   }>
   insights: {
     strengths: string[]
@@ -61,11 +64,17 @@ export default function ReportPage() {
   useEffect(() => {
     // Charger les données depuis localStorage
     const analysisId = params.id as string
+
+    console.log('=== LOADING FROM LOCALSTORAGE ===')
+    console.log('Analysis ID:', analysisId)
+
     const storedData = localStorage.getItem(`analysis-${analysisId}`)
+    console.log('Stored data raw:', storedData)
 
     if (storedData) {
       try {
         const parsedData = JSON.parse(storedData)
+        console.log('Parsed data:', parsedData)
 
         // Ajouter les métriques manquantes avec des valeurs par défaut
         const completeData = {
@@ -79,6 +88,8 @@ export default function ReportPage() {
           pausesEffective: parsedData.pausesEffective || 0,
           modulation: parsedData.modulation || Math.round((parsedData.clarityScore || 0) * 0.9), // Approximation
           coherence: parsedData.coherence || Math.round((parsedData.structureScore || 0) * 0.95), // Approximation
+          transcript: parsedData.transcript,
+          keyQuotes: parsedData.keyQuotes || [],
           annotations: parsedData.annotations || [],
           insights: parsedData.insights || {
             strengths: [],
@@ -88,10 +99,13 @@ export default function ReportPage() {
           createdAt: parsedData.createdAt || new Date().toISOString()
         }
 
+        console.log('Complete data to display:', completeData)
         setData(completeData)
       } catch (error) {
         console.error('Error parsing analysis data:', error)
       }
+    } else {
+      console.error('No data found in localStorage for ID:', analysisId)
     }
 
     setLoading(false)
@@ -290,19 +304,24 @@ export default function ReportPage() {
               {data.annotations.map((annotation, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-4 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                  className="flex items-start gap-4 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
                 >
-                  <Badge className={`text-xs font-mono ${getAnnotationColor(annotation.type)}`}>
+                  <Badge className={`text-xs font-mono ${getAnnotationColor(annotation.type)} mt-0.5`}>
                     {formatTimestamp(annotation.timestamp)}
                   </Badge>
 
                   <div className="flex-1">
-                    <p className="text-sm">{annotation.message}</p>
+                    <p className="text-sm mb-1">{annotation.message}</p>
+                    {annotation.quote && (
+                      <p className="text-xs text-white/60 italic mt-2 pl-3 border-l-2 border-white/20">
+                        "{annotation.quote}"
+                      </p>
+                    )}
                   </div>
 
-                  {annotation.type === 'success' && <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />}
-                  {annotation.type === 'warning' && <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0" />}
-                  {annotation.type === 'error' && <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />}
+                  {annotation.type === 'success' && <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />}
+                  {annotation.type === 'warning' && <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />}
+                  {annotation.type === 'error' && <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />}
                 </div>
               ))}
             </div>
@@ -363,6 +382,30 @@ export default function ReportPage() {
             ))}
           </div>
         </Card>
+
+        {/* Citations clés */}
+        {data.keyQuotes && data.keyQuotes.length > 0 && (
+          <Card className="glass-effect border-white/10 p-6 mb-8">
+            <h3 className="text-lg font-bold mb-4">Citations marquantes</h3>
+            <div className="space-y-4">
+              {data.keyQuotes.map((quote, i) => (
+                <div key={i} className="p-4 rounded-lg bg-accent/10 border-l-4 border-accent">
+                  <p className="text-sm italic leading-relaxed">"{quote}"</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {/* Transcript */}
+        {data.transcript && (
+          <Card className="glass-effect border-white/10 p-6 mb-8">
+            <h3 className="text-lg font-bold mb-4">Transcription complète</h3>
+            <div className="p-4 rounded-lg bg-white/5 max-h-64 overflow-y-auto">
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">{data.transcript}</p>
+            </div>
+          </Card>
+        )}
 
         {/* Comparison with previous (if exists) */}
         <div className="mb-8">
