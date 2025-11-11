@@ -1,34 +1,79 @@
 "use client"
 
 import { Navbar } from "@/components/shared/Navbar"
-import { StatsCard } from "@/components/dashboard/StatsCard"
-import { ProgressRing } from "@/components/dashboard/ProgressRing"
+import { ExerciseCard } from "@/components/dashboard/ExerciseCard"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import {
-  Upload,
-  TrendingUp,
-  Clock,
-  Target,
-  Flame,
   Play,
-  ChevronRight
+  Circle,
+  CheckCircle2
 } from "lucide-react"
 import { motion } from "framer-motion"
 import Link from "next/link"
 
 export default function DashboardPage() {
   // Mock data - sera remplacé par vraies données
-  const userData = {
-    globalScore: 72,
-    xp: 1250,
-    level: 3,
-    streak: 7,
-    totalAnalyses: 12,
-    avgImprovement: 18,
-    lastAnalysisDate: "Il y a 2 jours",
-    nextExerciseIn: "4h 23min"
-  }
+  const goals = [
+    {
+      id: '1',
+      description: 'Réduire mots parasites à <3/min',
+      completed: false
+    },
+    {
+      id: '2',
+      description: 'Maintenir débit 140-160 mots/min',
+      completed: false
+    },
+    {
+      id: '3',
+      description: 'Pratiquer 15 min/jour',
+      completed: true
+    }
+  ]
+
+  const recentExercises = [
+    {
+      id: '1',
+      subject: 'Histoire de Coca-Cola',
+      date: 'Il y a 2h',
+      duration: 156,
+      score: 76,
+      mediaType: 'audio' as const
+    },
+    {
+      id: '2',
+      subject: 'Les trous noirs expliqués',
+      date: 'Hier',
+      duration: 203,
+      score: 82,
+      mediaType: 'video' as const
+    },
+    {
+      id: '3',
+      subject: 'Bitcoin et cryptomonnaies',
+      date: 'Il y a 2 jours',
+      duration: 187,
+      score: 71,
+      mediaType: 'audio' as const
+    },
+    {
+      id: '4',
+      subject: 'Intelligence artificielle',
+      date: 'Il y a 3 jours',
+      duration: 245,
+      score: 88,
+      mediaType: 'video' as const
+    },
+    {
+      id: '5',
+      subject: 'Réchauffement climatique',
+      date: 'Il y a 4 jours',
+      duration: 172,
+      score: 79,
+      mediaType: 'audio' as const
+    }
+  ]
 
   return (
     <div className="min-h-screen bg-background">
@@ -39,7 +84,7 @@ export default function DashboardPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-12"
+          className="mb-8"
         >
           <h1 className="text-4xl md:text-5xl font-bold mb-3 bg-gradient-to-r from-white via-white to-white/60 bg-clip-text text-transparent">
             Salut Largo ! 👋
@@ -49,140 +94,109 @@ export default function DashboardPage() {
           </p>
         </motion.div>
 
-        {/* Main CTA - Upload Video */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1 }}
-          className="mb-12"
-        >
-          <Link href="/upload">
-            <Card className="relative overflow-hidden glass-effect border-primary/50 hover:border-primary transition-all duration-300 cursor-pointer group">
-              {/* Animated gradient background */}
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-accent/20 to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/30 to-primary/0"
-                animate={{ x: ['-100%', '100%'] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-              />
-
-              <div className="relative p-8 flex items-center justify-between">
-                <div className="flex items-center gap-6">
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-primary to-accent glow-primary">
-                    <Upload className="w-8 h-8 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold mb-2">Analyser une nouvelle vidéo</h2>
-                    <p className="text-white/60">Dépose ta vidéo et reçois ton rapport en 90 secondes</p>
-                  </div>
-                </div>
-                <ChevronRight className="w-6 h-6 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all" />
-              </div>
-            </Card>
-          </Link>
-        </motion.div>
-
-        {/* Score Principal + Stats Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-          {/* Score Principal */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-            className="lg:col-span-1"
-          >
-            <Card className="glass-effect border-white/10 p-8 flex flex-col items-center">
-              <ProgressRing score={userData.globalScore} size={220} />
-              <p className="text-white/60 text-sm mt-4 text-center">
-                Dernière analyse : {userData.lastAnalysisDate}
-              </p>
-              <Button className="mt-4 w-full" variant="outline">
-                Voir le rapport complet
-              </Button>
-            </Card>
-          </motion.div>
-
-          {/* Stats Cards */}
-          <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <StatsCard
-              title="Analyses totales"
-              value={userData.totalAnalyses}
-              icon={Target}
-              subtitle="Depuis le début"
-              delay={0.3}
-            />
-
-            <StatsCard
-              title="Amélioration moyenne"
-              value={`+${userData.avgImprovement}%`}
-              icon={TrendingUp}
-              trend={{ value: userData.avgImprovement, isPositive: true }}
-              gradient="from-green-500/20 to-emerald-500/20"
-              delay={0.4}
-            />
-
-            <StatsCard
-              title="Série en cours"
-              value={`${userData.streak} 🔥`}
-              icon={Flame}
-              subtitle="Jours consécutifs"
-              gradient="from-orange-500/20 to-red-500/20"
-              delay={0.5}
-            />
-
-            <StatsCard
-              title="Prochain exercice"
-              value={userData.nextExerciseIn}
-              icon={Clock}
-              subtitle="Exercice quotidien"
-              gradient="from-blue-500/20 to-purple-500/20"
-              delay={0.6}
-            />
-          </div>
-        </div>
-
-        {/* Progression XP */}
+        {/* Section Objectifs */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
+          transition={{ delay: 0.1 }}
+          className="mb-8"
         >
-          <Card className="glass-effect border-white/10 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-semibold">Niveau {userData.level}</h3>
-                <p className="text-sm text-white/60">{userData.xp} / 1500 XP</p>
-              </div>
-              <div className="text-sm text-white/60">
-                {1500 - userData.xp} XP avant niveau {userData.level + 1}
-              </div>
-            </div>
+          <h2 className="text-lg font-semibold mb-4 text-white/80">
+            Mes objectifs principaux
+          </h2>
 
-            <div className="relative h-3 bg-white/10 rounded-full overflow-hidden">
+          <div className="space-y-3">
+            {goals.map((goal, i) => (
               <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${(userData.xp / 1500) * 100}%` }}
-                transition={{ delay: 0.8, duration: 1 }}
-                className="absolute left-0 top-0 h-full bg-gradient-to-r from-primary to-accent rounded-full"
-                style={{ boxShadow: '0 0 10px rgba(99, 102, 241, 0.5)' }}
-              />
-            </div>
-          </Card>
+                key={goal.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 + i * 0.1 }}
+              >
+                <Card className="glass-effect border-white/10 hover:border-primary/30 transition-colors p-4 flex items-center gap-3 border-l-4 border-l-primary">
+                  {goal.completed ? (
+                    <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  ) : (
+                    <Circle className="w-5 h-5 text-white/40 flex-shrink-0" />
+                  )}
+                  <p className={`text-sm ${goal.completed ? 'text-white/60 line-through' : 'text-white'}`}>
+                    {goal.description}
+                  </p>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
         </motion.div>
 
-        {/* Historique récent - TODO */}
+        {/* Carrousel Exercices récents */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.9 }}
-          className="mt-12"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mb-12"
         >
-          <h3 className="text-xl font-bold mb-6">Historique récent</h3>
-          <Card className="glass-effect border-white/10 p-6 text-center text-white/40">
-            Tes analyses apparaîtront ici...
-          </Card>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-white/80">
+              Exercices récents
+            </h2>
+            <Link href="/history">
+              <Button variant="ghost" size="sm" className="text-white/60 hover:text-white">
+                Voir tout
+              </Button>
+            </Link>
+          </div>
+
+          {/* Carrousel horizontal */}
+          <div className="relative">
+            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
+              {recentExercises.map((exercise, i) => (
+                <ExerciseCard
+                  key={exercise.id}
+                  {...exercise}
+                  delay={0.5 + i * 0.1}
+                />
+              ))}
+            </div>
+
+            {/* Gradient fade sur les bords */}
+            <div className="absolute top-0 right-0 bottom-4 w-20 bg-gradient-to-l from-background to-transparent pointer-events-none" />
+          </div>
+        </motion.div>
+
+        {/* CTA Principal */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.9 }}
+          className="flex justify-center"
+        >
+          <Link href="/exercise/new" className="w-full max-w-2xl">
+            <Button className="w-full h-16 text-lg font-semibold bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity group relative overflow-hidden">
+              {/* Animated gradient background */}
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-accent/0 via-white/20 to-accent/0"
+                animate={{ x: ['-100%', '100%'] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              />
+
+              <div className="relative flex items-center justify-center gap-3">
+                <Play className="w-6 h-6 fill-white" />
+                <span>Commencer un exercice</span>
+              </div>
+            </Button>
+          </Link>
         </motion.div>
       </main>
+
+      <style jsx global>{`
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
     </div>
   )
 }

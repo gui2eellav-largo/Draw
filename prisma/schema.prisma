@@ -14,8 +14,8 @@ model User {
   image         String?
   createdAt     DateTime  @default(now())
 
-  analyses      Analysis[]
-  exercises     ExerciseLog[]
+  exercises     Exercise[]
+  goals         Goal[]
 
   // Gamification
   xp            Int       @default(0)
@@ -24,41 +24,42 @@ model User {
   lastActive    DateTime  @default(now())
 }
 
-model Analysis {
+model Exercise {
   id            String    @id @default(cuid())
   userId        String
   user          User      @relation(fields: [userId], references: [id])
 
-  // Video data
-  videoUrl      String
-  duration      Int       // en secondes
-  transcript    String?
+  subject       String    // Titre du sujet
+  briefContent  String    // Plan généré
+  mediaType     String    // "audio" | "video"
+  mediaUrl      String    // Path vers fichier
+  duration      Int       // Durée en secondes
 
-  // Scores (0-100)
+  // Scores
   globalScore   Float
-  rhythmScore   Float
-  clarityScore  Float
-  structureScore Float
-
-  // Métriques détaillées
   wordsPerMin   Int
-  fillerWords   Int       // "euh", "donc", etc.
-  pausesEffective Float   // pourcentage
+  fillerWords   Int
+  pausesAvg     Float
+  clarity       Float
 
-  // Annotations (JSON)
-  annotations   String    // timestamps avec insights
+  // Analysis
+  mainStrength  String
+  mainWeakness  String
+  recommendation String
+  timestamps    String    // JSON avec markers
 
   createdAt     DateTime  @default(now())
 }
 
-model ExerciseLog {
+model Goal {
   id            String    @id @default(cuid())
   userId        String
   user          User      @relation(fields: [userId], references: [id])
 
-  exerciseType  String    // "reading", "improv", "breathing"
+  description   String
+  targetValue   Float
+  currentValue  Float
   completed     Boolean   @default(false)
-  xpEarned      Int       @default(50)
 
   createdAt     DateTime  @default(now())
 }
