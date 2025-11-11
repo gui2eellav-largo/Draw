@@ -131,23 +131,31 @@ Sois précis dans les scores et observations, et base-toi sur des éléments con
 
     if (prisma) {
       try {
-        const analysis = await prisma.analysis.create({
+        // Extraire les principales forces et faiblesses
+        const mainStrength = analysisData.insights?.strengths?.[0] || 'Bonne prestation générale'
+        const mainWeakness = analysisData.insights?.improvements?.[0] || 'Continue à t\'entraîner'
+        const recommendation = analysisData.insights?.tips?.[0] || 'Pratique régulièrement'
+
+        const exercise = await prisma.exercise.create({
           data: {
             userId: 'mock-user-id', // TODO: remplacer par vrai user ID après auth
-            videoUrl: tempPath, // TODO: uploader sur cloud storage
+            subject: 'Présentation enregistrée', // Sera remplacé par le vrai sujet
+            briefContent: '', // Pas de brief pour les uploads directs
+            mediaType: file.type.includes('video') ? 'video' : 'audio',
+            mediaUrl: tempPath,
             duration: 120, // TODO: extraire durée réelle
             globalScore: analysisData.globalScore,
-            rhythmScore: analysisData.rhythmScore,
-            clarityScore: analysisData.clarityScore,
-            structureScore: analysisData.structureScore,
             wordsPerMin: analysisData.wordsPerMin,
             fillerWords: analysisData.fillerWords,
-            pausesEffective: analysisData.pausesEffective,
-            transcript: analysisData.transcript,
-            annotations: JSON.stringify(analysisData.annotations)
+            pausesAvg: analysisData.pausesEffective || 0,
+            clarity: analysisData.clarityScore,
+            mainStrength: mainStrength,
+            mainWeakness: mainWeakness,
+            recommendation: recommendation,
+            timestamps: JSON.stringify(analysisData.annotations || [])
           }
         })
-        analysisId = analysis.id
+        analysisId = exercise.id
       } catch (dbError) {
         console.warn('Database save failed, continuing without persistence:', dbError)
       }
